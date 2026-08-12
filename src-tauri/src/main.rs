@@ -650,7 +650,23 @@ async fn check_skill_status(taskboard_path: String) -> Result<SkillStatus, Strin
     }
 }
 
-/// 安装 Codex Skill（创建符号链接）
+#[cfg(windows)]
+fn copy_directory(source: &std::path::Path, target: &std::path::Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(target)?;
+    for entry in std::fs::read_dir(source)? {
+        let entry = entry?;
+        let source_path = entry.path();
+        let target_path = target.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_directory(&source_path, &target_path)?;
+        } else {
+            std::fs::copy(&source_path, &target_path)?;
+        }
+    }
+    Ok(())
+}
+
+/// 安装 Codex Skill（优先创建符号链接；Windows 权限不足时复制目录）
 #[tauri::command]
 async fn install_skill(taskboard_path: String) -> Result<String, String> {
     let home = home_dir()?;
@@ -658,7 +674,7 @@ async fn install_skill(taskboard_path: String) -> Result<String, String> {
     let skill_target = std::path::Path::new(&home).join(".codex/skills/manage-taskboard");
 
     // 检查源路径
-    if !skill_source.exists() {
+    if !skill_source.is_dir() {
         return Err(i18n::trf("Skill source path does not exist: {path}", &[
             ("path", skill_source.display().to_string()),
         ]));
@@ -669,8 +685,18 @@ async fn install_skill(taskboard_path: String) -> Result<String, String> {
     std::fs::create_dir_all(&skills_dir)
         .map_err(|e| i18n::trf("Failed to create skills directory: {error}", &[("error", e.to_string())]))?;
 
-    // 如果已存在则先删除
-    if skill_target.exists() {
+    // skill-installer 等工具可能已安装实体目录；有效目录必须保留，重复点击不可先删再装。
+    let existing_meta = std::fs::symlink_metadata(&skill_target).ok();
+    if existing_meta.as_ref().is_some_and(|meta| !meta.file_type().is_symlink())
+        && skill_target.join("SKILL.md").is_file()
+    {
+        return Ok(i18n::trf("Skill installed to {path}", &[
+            ("path", skill_target.display().to_string()),
+        ]));
+    }
+
+    // 无效目标或指向旧来源的链接才移除。
+    if existing_meta.is_some() {
         std::fs::remove_file(&skill_target)
             .or_else(|_| std::fs::remove_dir_all(&skill_target))
             .map_err(|e| i18n::trf("Failed to remove old link: {error}", &[("error", e.to_string())]))?;
@@ -684,13 +710,16 @@ async fn install_skill(taskboard_path: String) -> Result<String, String> {
     }
     #[cfg(windows)]
     {
-        // Windows 上根据源类型选择 symlink_file 或 symlink_dir
-        let result = if skill_source.is_dir() {
-            std::os::windows::fs::symlink_dir(&skill_source, &skill_target)
-        } else {
-            std::os::windows::fs::symlink_file(&skill_source, &skill_target)
-        };
-        result.map_err(|e| i18n::trf("Failed to create symlink: {error} (administrator privileges or Developer Mode may be required)", &[("error", e.to_string())]))?;
+        // 未开启开发者模式的普通用户无法建立目录符号链接（OS error 1314）；
+        // 退回实体复制，保证安装按钮在标准 Windows 权限下可用。
+        if let Err(link_error) = std::os::windows::fs::symlink_dir(&skill_source, &skill_target) {
+            copy_directory(&skill_source, &skill_target).map_err(|copy_error| {
+                i18n::trf("Failed to install Skill: {error}", &[(
+                    "error",
+                    format!("symlink: {link_error}; copy: {copy_error}"),
+                )])
+            })?;
+        }
     }
 
     Ok(i18n::trf("Skill installed to {path}", &[("path", skill_target.display().to_string())]))
