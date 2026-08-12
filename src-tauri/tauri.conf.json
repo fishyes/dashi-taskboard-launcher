@@ -43,6 +43,8 @@
       "../vendor/dashi-taskboard/server": "vendor/dashi-taskboard/server",
       "../vendor/dashi-taskboard/shared": "vendor/dashi-taskboard/shared",
       "../vendor/dashi-taskboard/scripts": "vendor/dashi-taskboard/scripts",
+      "../vendor/dashi-taskboard/cli": "vendor/dashi-taskboard/cli",
+      "../vendor/dashi-taskboard/skills": "vendor/dashi-taskboard/skills",
       "../vendor/dashi-taskboard/inject": "vendor/dashi-taskboard/inject",
       "../vendor/dashi-taskboard/dist/web": "vendor/dashi-taskboard/dist/web",
       "../vendor/dashi-taskboard/package.json": "vendor/dashi-taskboard/package.json"
