@@ -152,6 +152,7 @@ pnpm run build:updater      # 生成 updater 产物
 | 文档 | 内容 |
 | --- | --- |
 | [CONTEXT.md](CONTEXT.md) | 领域术语表（配置看守 + Taskboard 集成 + FastCtx 集成） |
+| [docs/CODEX_AUTO_DEPLOY_PROMPT.zh-TW.md](docs/CODEX_AUTO_DEPLOY_PROMPT.zh-TW.md) | 用 Codex 完整部署 Windows 版本并每日整合上游的繁体中文提示词 |
 | [docs/design.md](docs/design.md) | 架构与模块设计 |
 | [scripts/build-themes.mjs](scripts/build-themes.mjs) | 主题构建：tweakcn registry → token + 本地字体 |
 | [docs/adr/0008](docs/adr/0008-tweakcn-token-theming.md) | tweakcn token 主题体系（取代 daisyUI 的 ADR 0007） |

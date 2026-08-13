@@ -152,6 +152,7 @@ pnpm run build:updater      # generate updater artifacts
 | Doc | Contents |
 | --- | --- |
 | [CONTEXT.md](CONTEXT.md) | Domain glossary (config guard + taskboard integration + FastCtx integration) |
+| [docs/CODEX_AUTO_DEPLOY_PROMPT.zh-TW.md](docs/CODEX_AUTO_DEPLOY_PROMPT.zh-TW.md) | Traditional Chinese Codex prompt for full Windows deployment and daily upstream integration |
 | [docs/design.md](docs/design.md) | Architecture and module design |
 | [scripts/build-themes.mjs](scripts/build-themes.mjs) | Theme build: tweakcn registry → tokens + local fonts |
 | [docs/adr/0008](docs/adr/0008-tweakcn-token-theming.md) | tweakcn token theming (supersedes daisyUI ADR 0007) |
