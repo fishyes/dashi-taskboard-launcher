@@ -1,23 +1,23 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
-  "productName": "Dashi Taskboard Launcher",
-  "version": "0.13.2",
-  "identifier": "com.dashi.taskboard.launcher",
+  "productName": "Codex Pro Max",
+  "version": "1.0.0",
+  "identifier": "com.codex.pro.max",
   "build": {
     "beforeDevCommand": "pnpm run ensure:taskboard && pnpm run dev",
     "beforeBuildCommand": "pnpm run build:taskboard && pnpm run build",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },
   "app": {
     "withGlobalTauri": false,
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost http://localhost:1420 ws://localhost:1420"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost http://localhost:5173 ws://localhost:5173"
     },
     "windows": [
       {
         "label": "main",
-        "title": "Dashi Taskboard Launcher",
+        "title": "Codex Pro Max",
         "width": 960,
         "height": 680,
         "resizable": true,

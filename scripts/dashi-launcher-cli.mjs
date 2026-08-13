@@ -13,7 +13,7 @@ const REQUEST_TIMEOUT_MS = 90_000;
 const STARTUP_TIMEOUT_MS = 12_000;
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
-export const usage = `Dashi Taskboard Launcher CLI
+export const usage = `Codex Pro Max Launcher CLI
 
 用法:
   dashi-launcher status [--json]
@@ -41,10 +41,18 @@ export function normalizeCommand(rawArgs) {
   throw new Error(`不支援的命令: ${args.join(" ")}`);
 }
 
-function configPath() {
-  const home = process.env.USERPROFILE || process.env.HOME;
+export function configCandidates(env = process.env) {
+  const home = env.USERPROFILE || env.HOME;
   if (!home) throw new Error("找不到使用者主目錄");
-  return join(home, ".dashi-taskboard-launcher", "config.json");
+  return [
+    join(home, ".codex-pro-max", "config.json"),
+    join(home, ".dashi-taskboard-launcher", "config.json"),
+  ];
+}
+
+function configPath() {
+  const candidates = configCandidates();
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
 }
 
 async function readSecret() {
@@ -55,23 +63,31 @@ async function readSecret() {
   return config.instance_secret;
 }
 
-function launcherCandidates() {
-  const exe = "dashi-taskboard-launcher.exe";
+export function launcherCandidates(env = process.env, currentScriptDir = scriptDir) {
+  const currentExe = "codex-pro-max.exe";
+  const legacyExe = "dashi-taskboard-launcher.exe";
   return [
-    process.env.DASHI_LAUNCHER_EXE,
-    join(scriptDir, exe),
-    process.env.LOCALAPPDATA
-      ? join(process.env.LOCALAPPDATA, "Dashi Taskboard Launcher", exe)
+    env.CODEX_PRO_MAX_EXE,
+    env.DASHI_LAUNCHER_EXE,
+    join(currentScriptDir, currentExe),
+    env.LOCALAPPDATA
+      ? join(env.LOCALAPPDATA, "Codex Pro Max", currentExe)
       : undefined,
-    join(scriptDir, "..", "src-tauri", "target", "release", exe),
-    join(scriptDir, "..", "src-tauri", "target", "debug", exe),
+    join(currentScriptDir, "..", "src-tauri", "target", "release", currentExe),
+    join(currentScriptDir, "..", "src-tauri", "target", "debug", currentExe),
+    join(currentScriptDir, legacyExe),
+    env.LOCALAPPDATA
+      ? join(env.LOCALAPPDATA, "Dashi Taskboard Launcher", legacyExe)
+      : undefined,
+    join(currentScriptDir, "..", "src-tauri", "target", "release", legacyExe),
+    join(currentScriptDir, "..", "src-tauri", "target", "debug", legacyExe),
   ].filter(Boolean);
 }
 
 export function findLauncherExecutable() {
   const found = launcherCandidates().find((candidate) => existsSync(candidate));
   if (!found) {
-    throw new Error("找不到 dashi-taskboard-launcher.exe，請先安裝或設定 DASHI_LAUNCHER_EXE");
+    throw new Error("找不到 codex-pro-max.exe，請先安裝或設定 CODEX_PRO_MAX_EXE");
   }
   return found;
 }

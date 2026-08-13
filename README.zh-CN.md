@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="./assets/readme/hero.zh-CN.svg" width="100%" alt="Dashi Taskboard Launcher — Tauri v2 桌面启动器：Taskboard 服务托管、Codex CDP 注入、~/.codex 配置看守、应用自更新">
+<img src="./assets/readme/hero.zh-CN.svg" width="100%" alt="Codex Pro Max — Tauri v2 桌面启动器：Taskboard 服务托管、Codex CDP 注入、~/.codex 配置看守、应用自更新">
 
 **图形界面替代手写命令，一站式管理 dashi-taskboard 的使用体验。**
 
-[![GitHub Release](https://img.shields.io/github/v/release/sperictao/dashi-taskboard-launcher)](https://github.com/sperictao/dashi-taskboard-launcher/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/sperictao/codex-pro-max)](https://github.com/sperictao/codex-pro-max/releases)
 [![Tauri 2](https://img.shields.io/badge/Tauri-2.x-FFC131?logo=tauri&logoColor=white)](https://tauri.app)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Rust](https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=white)](https://www.rust-lang.org)
@@ -12,6 +12,9 @@
 [English](README.md) · [简体中文](README.zh-CN.md)
 
 </div>
+
+> **注意：** 本项目原名为 **Dashi Taskboard Launcher**（`sperictao/dashi-taskboard-launcher`），现已更名为 **Codex Pro Max**。已有克隆可更新远端地址：
+> `git remote set-url origin https://github.com/sperictao/codex-pro-max.git`
 
 ---
 
@@ -28,7 +31,7 @@
 
 ## 📦 下载安装
 
-从 [Releases](https://github.com/sperictao/dashi-taskboard-launcher/releases) 下载对应平台安装包（macOS dmg / Windows setup.exe / Linux AppImage、deb）。安装后打开即可，taskboard 已打包在内，无需单独克隆。
+从 [Releases](https://github.com/sperictao/codex-pro-max/releases) 下载对应平台安装包（macOS dmg / Windows setup.exe / Linux AppImage、deb）。安装后打开即可，taskboard 已打包在内，无需单独克隆。
 
 ---
 
@@ -46,7 +49,7 @@
 安裝包內附的 CLI 與 GUI 共用同一個程序管理器，因此腳本可以控制由 GUI 啟動的服務，不會搶走滑鼠焦點；Launcher 尚未運行時，CLI 會靜默啟動至系統匣。
 
 ```powershell
-$launcher = "$env:LOCALAPPDATA\Dashi Taskboard Launcher\dashi-launcher.cmd"
+$launcher = "$env:LOCALAPPDATA\Codex Pro Max\dashi-launcher.cmd"
 & $launcher status
 & $launcher start
 & $launcher stop
@@ -64,8 +67,8 @@ $launcher = "$env:LOCALAPPDATA\Dashi Taskboard Launcher\dashi-launcher.cmd"
 
 ```bash
 # submodule 必需：vendor/dashi-taskboard 是 git submodule
-git clone --recurse-submodules https://github.com/sperictao/dashi-taskboard-launcher
-cd dashi-taskboard-launcher
+git clone --recurse-submodules https://github.com/sperictao/codex-pro-max
+cd codex-pro-max
 pnpm install
 pnpm run tauri dev
 ```
@@ -77,7 +80,7 @@ pnpm run tauri dev
 ## 🏗️ 仓库结构
 
 ```
-dashi-taskboard-launcher/
+codex-pro-max/
 ├── src/                    前端（TS + Vite，单页 UI）
 ├── src-tauri/              Rust 后端（命令入口、配置、进程托管、看守、updater）
 ├── vendor/dashi-taskboard  git submodule → sperictao/dashi-taskboard（fork）

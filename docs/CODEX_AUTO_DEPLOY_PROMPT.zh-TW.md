@@ -7,7 +7,7 @@
 - Taskboard 原作者／權威來源是 [`chuspeeism/dashi-taskboard`](https://github.com/chuspeeism/dashi-taskboard) 的 `main`。
 - [`sperictao/dashi-taskboard`](https://github.com/sperictao/dashi-taskboard) 是上述原作者專案的直接 fork，也是 Launcher 原作者目前指定的 Taskboard submodule；它只代表 Launcher 相容維護層，不是 Taskboard 原作者。
 - [`fishyes/dashi-taskboard`](https://github.com/fishyes/dashi-taskboard) 是同一 fork network 內的 Windows/Codex 整合 fork，`codex/windows-integration` 是整合分支。
-- Launcher 則是另一個獨立專案：原始來源為 [`sperictao/dashi-taskboard-launcher`](https://github.com/sperictao/dashi-taskboard-launcher)，FishYes repo 是它的 Windows/Codex 整合 fork。
+- Launcher 則是另一個獨立專案：原始來源已更名為 [`sperictao/codex-pro-max`](https://github.com/sperictao/codex-pro-max)，FishYes repo 仍是 `dashi-taskboard-launcher` 的 Windows/Codex 整合 fork。
 
 使用前只需確認：
 
@@ -26,7 +26,7 @@ Scheduled tasks 的建立、啟用與本機專案限制請以 [Codex 官方說�
 ## 目標
 
 1. 把兩個專案部署到這台 Windows 電腦：
-   - Launcher 原始來源：https://github.com/sperictao/dashi-taskboard-launcher
+   - Launcher 原始來源：https://github.com/sperictao/codex-pro-max
    - Launcher 整合基線：https://github.com/fishyes/dashi-taskboard-launcher
    - Taskboard 原作者來源：https://github.com/chuspeeism/dashi-taskboard
    - Taskboard 整合基線：https://github.com/fishyes/dashi-taskboard
@@ -57,7 +57,7 @@ Scheduled tasks 的建立、啟用與本機專案限制請以 [Codex 官方說�
 - Tauri CLI：使用 Launcher lockfile 解析的 `2.11.4`；不得另裝一份未鎖定的全域 Tauri CLI 取代專案版本。
 - Windows 建置環境：x64 Windows、WebView2 Evergreen Runtime、Rust MSVC target 所需的 C++ linker，以及 NSIS/Tauri 能正常完成一次實際 build。不要只因 registry 或 PATH 有名稱就判定可用。
 - Git/GitHub CLI：不硬編最低版，但 `git` 必須支援 submodule、worktree 與目前 repo 格式，`gh` 必須已登入且能建立 fork／push。已驗證 Git `2.44.0.windows.1`、gh `2.94.0`。
-- 專案快照：本文件建立時為 Launcher `0.13.2`、Taskboard `1.0.2`；實際部署版本以 checkout 後的 manifest、tag 與 commit 為準，不得為了吻合本段文字降版。
+- 專案快照：本文件最近驗證為 Launcher `1.0.0`、Taskboard `1.0.3`；實際部署版本以 checkout 後的 manifest、tag 與 commit 為準，不得為了吻合本段文字降版。
 
 Codex CLI 是獨立閘門，必須遵守：
 
@@ -119,7 +119,7 @@ Launcher：
 
 - `origin`：`https://github.com/$GITHUB_OWNER/dashi-taskboard-launcher.git`
 - `integration`：`https://github.com/fishyes/dashi-taskboard-launcher.git`
-- `upstream`：`https://github.com/sperictao/dashi-taskboard-launcher.git`
+- `upstream`：`https://github.com/sperictao/codex-pro-max.git`
 
 Taskboard submodule：
 
@@ -167,9 +167,10 @@ Launcher：
 ## 第四階段：安裝與實機驗證
 
 1. 若已安裝 Launcher，先使用：
-   - `$launcher = "$env:LOCALAPPDATA\Dashi Taskboard Launcher\dashi-launcher.cmd"`
+   - `$launcher = "$env:LOCALAPPDATA\Codex Pro Max\dashi-launcher.cmd"`
+   - 若仍是 1.0.0 前的舊安裝，才回退到 `$env:LOCALAPPDATA\Dashi Taskboard Launcher\dashi-launcher.cmd`。
    - `& $launcher stop`
-2. 安裝新版前，只能終止完整路徑等於安裝目錄內 `dashi-taskboard-launcher.exe` 的 Launcher；不能批次終止所有同名或 Node 程序。
+2. 安裝新版前，只能終止完整路徑等於安裝目錄內 `codex-pro-max.exe`（舊版為 `dashi-taskboard-launcher.exe`）的 Launcher；不能批次終止所有同名或 Node 程序。
 3. 以 NSIS `/S` 安裝，檢查退出碼為 0。
 4. 比對原始碼與安裝目錄中的下列 SHA-256：
    - `dashi-launcher-cli.mjs`

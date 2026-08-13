@@ -430,6 +430,7 @@ async fn run_start_all(
         config.taskboard_port,
         &instance_token,
         &instance_secret,
+        &config::taskboard_runtime_file_path()?,
     ).await?;
 
     app.emit("status-update", &serde_json::json!({
@@ -532,6 +533,7 @@ async fn start_injector(
         config.taskboard_port,
         &token,
         &secret,
+        &config::taskboard_runtime_file_path()?,
     ).await
 }
 
@@ -754,7 +756,7 @@ async fn run_taskctl(
     let (token, _) = config::ensure_instance_credentials(&mut config::load_config()?)?;
     cmd.env(
         "CODEX_TASKBOARD_URL",
-        format!("http://{}:{}/{}", config.taskboard_host, config.taskboard_port, token),
+        config::taskboard_url(&config.taskboard_host, config.taskboard_port, &token),
     );
     // Windows 上不弹出终端窗口
     #[cfg(windows)]
@@ -826,7 +828,7 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut tray = TrayIconBuilder::with_id("main")
         .menu(&menu)
-        .tooltip("Dashi Taskboard Launcher")
+        .tooltip("Codex Pro Max")
         .show_menu_on_left_click(false);
     // ponytail: 直接用应用图标；macOS 菜单栏想更精致可换 template 图标
     if let Some(icon) = app.default_window_icon() {
@@ -935,7 +937,7 @@ pub fn run() {
         })
         .manage(updater::PendingUpdateState::default())
         .setup(|app| {
-            log::info!("Dashi Taskboard Launcher 启动中...");
+            log::info!("Codex Pro Max 启动中...");
             let _ = APP_HANDLE.set(app.handle().clone());
             // 启动即解析界面语言（system → 具体语言），托盘与后续所有产串处都读它
             let setting = config::load_config()
@@ -1053,7 +1055,7 @@ pub fn run() {
             updater::install_update,
         ])
         .run(tauri::generate_context!())
-        .expect("启动 Dashi Taskboard Launcher 失败");
+        .expect("启动 Codex Pro Max 失败");
 }
 
 fn main() {
