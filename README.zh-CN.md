@@ -41,6 +41,23 @@
 
 ---
 
+## ⌨️ 命令列控制
+
+安裝包內附的 CLI 與 GUI 共用同一個程序管理器，因此腳本可以控制由 GUI 啟動的服務，不會搶走滑鼠焦點；Launcher 尚未運行時，CLI 會靜默啟動至系統匣。
+
+```powershell
+$launcher = "$env:LOCALAPPDATA\Dashi Taskboard Launcher\dashi-launcher.cmd"
+& $launcher status
+& $launcher start
+& $launcher stop
+& $launcher restart
+& $launcher skill reinstall
+```
+
+任何命令都可附加 `--json` 取得機器可讀輸出。在原始碼 checkout 內可改用 `pnpm launcher -- <command>`。
+
+---
+
 ## 🚀 开发环境
 
 要求：Node ≥ 22.5、Rust stable、系统 Tauri 依赖（见 [Tauri 官方前置条件](https://v2.tauri.app/start/prerequisites/)）。

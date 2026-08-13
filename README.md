@@ -41,6 +41,23 @@ Grab the installer for your platform from [Releases](https://github.com/spericta
 
 ---
 
+## ⌨️ Command-line Control
+
+The packaged CLI talks to the same process manager as the GUI, so scripts can control a GUI-started service without stealing mouse focus. It starts the Launcher silently in the tray when needed.
+
+```powershell
+$launcher = "$env:LOCALAPPDATA\Dashi Taskboard Launcher\dashi-launcher.cmd"
+& $launcher status
+& $launcher start
+& $launcher stop
+& $launcher restart
+& $launcher skill reinstall
+```
+
+Add `--json` to any command for machine-readable output. In a source checkout, the equivalent entry point is `pnpm launcher -- <command>`.
+
+---
+
 ## 🚀 Development
 
 Requirements: Node ≥ 22.5, Rust stable, and the system Tauri dependencies (see [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)).

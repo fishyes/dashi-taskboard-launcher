@@ -7,6 +7,7 @@ use tauri::{Emitter, Manager, State};
 use serde::Serialize;
 
 mod config;
+mod cli_control;
 mod codex_guard;
 mod fastctx;
 mod i18n;
@@ -667,8 +668,7 @@ fn copy_directory(source: &std::path::Path, target: &std::path::Path) -> std::io
 }
 
 /// 安装 Codex Skill（优先创建符号链接；Windows 权限不足时复制目录）
-#[tauri::command]
-async fn install_skill(taskboard_path: String) -> Result<String, String> {
+async fn install_skill_impl(taskboard_path: String, force: bool) -> Result<String, String> {
     let home = home_dir()?;
     let skill_source = std::path::Path::new(&taskboard_path).join("skills/manage-taskboard");
     let skill_target = std::path::Path::new(&home).join(".codex/skills/manage-taskboard");
@@ -685,17 +685,18 @@ async fn install_skill(taskboard_path: String) -> Result<String, String> {
     std::fs::create_dir_all(&skills_dir)
         .map_err(|e| i18n::trf("Failed to create skills directory: {error}", &[("error", e.to_string())]))?;
 
-    // skill-installer 等工具可能已安装实体目录；有效目录必须保留，重复点击不可先删再装。
+    // GUI 的重复点击保持幂等；CLI 明确要求 reinstall 时才替换实体目录。
     let existing_meta = std::fs::symlink_metadata(&skill_target).ok();
     if existing_meta.as_ref().is_some_and(|meta| !meta.file_type().is_symlink())
         && skill_target.join("SKILL.md").is_file()
+        && !force
     {
         return Ok(i18n::trf("Skill installed to {path}", &[
             ("path", skill_target.display().to_string()),
         ]));
     }
 
-    // 无效目标或指向旧来源的链接才移除。
+    // 无效目标、旧链接，或 CLI 明确要求 reinstall 时才移除。
     if existing_meta.is_some() {
         std::fs::remove_file(&skill_target)
             .or_else(|_| std::fs::remove_dir_all(&skill_target))
@@ -723,6 +724,12 @@ async fn install_skill(taskboard_path: String) -> Result<String, String> {
     }
 
     Ok(i18n::trf("Skill installed to {path}", &[("path", skill_target.display().to_string())]))
+}
+
+/// 安装 Codex Skill；GUI 重复点击不覆盖已安装的实体目录。
+#[tauri::command]
+async fn install_skill(taskboard_path: String) -> Result<String, String> {
+    install_skill_impl(taskboard_path, false).await
 }
 
 /// 运行 taskctl 命令
@@ -886,8 +893,12 @@ pub fn run() {
 
     tauri::Builder::default()
         // single-instance 必须最先注册：第二实例在此退出，其余插件不重复初始化
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            show_main_window(app);
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            // CLI 在控制服務尚未就緒的競態下可能再次拉起 exe；第二實例只負責
+            // 喚醒既有實例，不能因此搶焦點顯示視窗。
+            if !args.iter().any(|arg| arg == "--cli-daemon") {
+                show_main_window(app);
+            }
         }))
         .plugin(
             tauri_plugin_log::Builder::new()
@@ -931,12 +942,13 @@ pub fn run() {
                 .map(|c| c.language)
                 .unwrap_or_else(|_| "system".to_string());
             i18n::set_current(i18n::resolve_language(&setting));
+            cli_control::start(app.handle().clone());
             if let Err(e) = setup_tray(app) {
                 log::error!("初始化系统托盘失败: {}", e);
             }
             // 主窗口保持可交互创建；自启拉起（--autostart）再隐藏到托盘，
             // 避免 macOS WebKit 在隐藏创建后再显示时丢失鼠标事件。
-            if std::env::args().any(|a| a == "--autostart") {
+            if std::env::args().any(|a| a == "--autostart" || a == "--cli-daemon") {
                 hide_main_window_to_tray(app.handle());
             } else {
                 // ponytail: window-state 恢复的坐标可能落在已拔掉的显示器上；
@@ -976,12 +988,15 @@ pub fn run() {
                     api.prevent_close();
                     hide_main_window_to_tray(window.app_handle());
                 } else {
-                    // 窗口关闭时尝试停止所有子进程
-                    let app = window.app_handle();
+                    // 先阻止視窗直接結束主程序，等受管子程序確實停止後再退出。
+                    // 否則安裝升級／正常關窗都可能留下舊版 Node 服務占用連接埠。
+                    api.prevent_close();
+                    let app = window.app_handle().clone();
                     let pm = app.state::<AppState>();
                     let pm_clone = pm.pm.clone();
                     tauri::async_runtime::spawn(async move {
                         let _ = pm_clone.stop_all().await;
+                        app.exit(0);
                     });
                 }
             }

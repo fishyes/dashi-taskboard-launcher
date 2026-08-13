@@ -20,6 +20,7 @@ Tauri v2 桌面启动器，用图形界面替代手写命令，管理两个后�
 ┌─────────────────────────────┐
 │ Rust 后端 src-tauri/src/     │
 │  main.rs            命令入口  │
+│  cli_control.rs     本机 CLI 控制│
 │  config.rs          配置读写  │
 │  process_manager.rs 进程托管  │
 └─────────────────────────────┘
@@ -71,7 +72,11 @@ Codex 配置看守（词汇与边界见 [../CONTEXT.md](../CONTEXT.md) 与 [adr/
 - **备份**：任何写入前复制目标文件到 `~/.codex/dashi-backups/`，每文件保留 20 份
 - **命令**：`guard_get_view` / `guard_set_enabled` / `guard_set_value` / `guard_apply` / `guard_set_locked` / `guard_add_custom_param` / `guard_remove_custom_param` / `guard_get_schema_file_path` / `guard_get_files` / `guard_add_file` / `guard_update_file` / `guard_remove_file` / `guard_detect_file`（路径检测：只搜顶层+一层子目录，结果落盘为检测记录，之后直接读记录不重复扫）
 
-### 3.5 taskboard 集成与打包
+### 3.5 cli_control.rs
+
+本机 CLI 控制服务只监听 `127.0.0.1:47824`，请求必须携带配置中的 instance secret。`scripts/dashi-launcher-cli.mjs` 通过该通道调用与 GUI 相同的 `ProcessManager`，提供 `status` / `start` / `stop` / `restart` / `skill reinstall`；Launcher 未运行时以 `--cli-daemon` 静默拉起至系统托盘。
+
+### 3.6 taskboard 集成与打包
 
 dashi-taskboard 以 git submodule 集成于 `vendor/dashi-taskboard`（指向 fork、pin commit，决策见 [adr/0002](adr/0002-taskboard-submodule-packaging.md)，词汇见 [../CONTEXT.md](../CONTEXT.md)）：
 
@@ -79,6 +84,7 @@ dashi-taskboard 以 git submodule 集成于 `vendor/dashi-taskboard`（指向 fo
 - **打包**：`tauri.conf.json` resources 白名单只含运行时必需项（`server/ shared/ scripts/ inject/ dist/web package.json`），上游新增运行时目录需同步
 - **升级**：进 submodule checkout 目标 commit，回 launcher 提交指针
 - **运行时**：`get_bundled_taskboard_path` 打包后解析 `resource_dir/vendor/dashi-taskboard`，开发模式回退项目根目录；`taskboard_path` 配置可指向外部 checkout 覆盖内置版
+- **Codex 內嵌傳輸**：Taskboard 文件維持 opaque sandbox，resident injector 驗證服務身分後以 `Page.setDocumentContent` 載入；靜態資源與 API 僅代理目前 instance token 的 loopback 路徑，避免 renderer 直接連線被 Local Network Access 阻擋
 
 ## 4. 前端
 
