@@ -10,6 +10,11 @@ import {
 
 assert.deepEqual(normalizeCommand(["status"]), { command: "status", json: false });
 assert.deepEqual(normalizeCommand(["start", "--json"]), { command: "start", json: true });
+assert.deepEqual(normalizeCommand(["inject"]), { command: "inject", json: false });
+assert.deepEqual(normalizeCommand(["start", "--restart-codex", "--json"]), {
+  command: "inject",
+  json: true,
+});
 assert.deepEqual(normalizeCommand(["skill", "reinstall"]), {
   command: "skill-reinstall",
   json: false,
@@ -40,6 +45,20 @@ assert.equal(
     processes: [{ name: "taskboard-server", status: "running", pid: 123, message: "ready" }],
   }),
   "OK: Launcher status\ntaskboard-server\trunning\tPID 123\tready",
+);
+
+assert.equal(
+  formatHuman({
+    ok: true,
+    message: "Launcher status",
+    processes: [],
+    integration: {
+      state: "running_without_debug",
+      cdpPort: 9231,
+      message: "Codex is running without Taskboard injection",
+    },
+  }),
+  "OK: Launcher status\ncodex-integration\trunning_without_debug\tCDP 9231\tCodex is running without Taskboard injection",
 );
 
 console.log("Launcher CLI tests passed");

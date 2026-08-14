@@ -48,6 +48,11 @@ fn codex_processes() -> Vec<u32> {
 }
 
 #[cfg(target_os = "windows")]
+pub fn codex_running() -> bool {
+    !codex_processes().is_empty()
+}
+
+#[cfg(target_os = "windows")]
 fn is_desktop_codex(exe_name: &str, pid: u32) -> bool {
     let name = exe_name.to_lowercase();
     if name == "chatgpt.exe" {
@@ -122,7 +127,7 @@ pub async fn quit_codex() -> Result<(), String> {
 
 /// macOS 桌面版是否运行：pgrep 大小写敏感，"Codex" 不会误匹配 CLI 的 codex
 #[cfg(target_os = "macos")]
-fn codex_running() -> bool {
+pub fn codex_running() -> bool {
     ["ChatGPT", "Codex"].iter().any(|name| {
         std::process::Command::new("pgrep")
             .args(["-x", *name])
@@ -132,6 +137,11 @@ fn codex_running() -> bool {
             .map(|s| s.success())
             .unwrap_or(false)
     })
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn codex_running() -> bool {
+    false
 }
 
 /// macOS：osascript quit 优雅退出（首次会弹「允许控制」授权，拒绝则走 pkill 兜底）
@@ -358,13 +368,59 @@ fn refresh_liveness(proc: &mut ManagedProcess) {
     }
 }
 
-fn cdp_reachable(port: u16) -> bool {
+pub fn cdp_reachable(port: u16) -> bool {
     use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
     TcpStream::connect_timeout(
         &SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port),
         std::time::Duration::from_millis(500),
     )
     .is_ok()
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum CodexIntegrationState {
+    NotRunning,
+    DebugReady,
+    RunningWithoutDebug,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexIntegrationInfo {
+    pub state: CodexIntegrationState,
+    pub cdp_port: u16,
+    pub message: String,
+}
+
+fn integration_state_for(cdp_ready: bool, desktop_running: bool) -> CodexIntegrationState {
+    if cdp_ready {
+        CodexIntegrationState::DebugReady
+    } else if desktop_running {
+        CodexIntegrationState::RunningWithoutDebug
+    } else {
+        CodexIntegrationState::NotRunning
+    }
+}
+
+/// 只读判断 Codex 是否具备注入条件；不会启动或关闭任何程序。
+pub fn codex_integration_info(port: u16) -> CodexIntegrationInfo {
+    let state = integration_state_for(cdp_reachable(port), codex_running());
+    let message = match state {
+        CodexIntegrationState::NotRunning => tr("Codex is not running; use inject to launch it with Taskboard"),
+        CodexIntegrationState::DebugReady => trf(
+            "Codex debug port {port} is ready for Taskboard injection",
+            &[("port", port.to_string())],
+        ),
+        CodexIntegrationState::RunningWithoutDebug => tr(
+            "Codex is running without Taskboard injection; use inject to restart it safely",
+        ),
+    };
+    CodexIntegrationInfo {
+        state,
+        cdp_port: port,
+        message,
+    }
 }
 
 /// token 模式 health 探测的 HMAC-SHA256 proof（与 server/injector 算法一致）
@@ -808,7 +864,23 @@ impl ProcessManager {
 
 #[cfg(test)]
 mod tests {
-    use super::{hmac_proof, resolve_node};
+    use super::{hmac_proof, integration_state_for, resolve_node, CodexIntegrationState};
+
+    #[test]
+    fn integration_state_prioritizes_debug_port() {
+        assert_eq!(
+            integration_state_for(true, true),
+            CodexIntegrationState::DebugReady
+        );
+        assert_eq!(
+            integration_state_for(false, true),
+            CodexIntegrationState::RunningWithoutDebug
+        );
+        assert_eq!(
+            integration_state_for(false, false),
+            CodexIntegrationState::NotRunning
+        );
+    }
 
     #[test]
     fn resolves_existing_node() {

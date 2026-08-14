@@ -3,8 +3,8 @@ use tauri::Manager;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
-use crate::process_manager::ProcessInfo;
-use crate::{config, install_skill_impl, run_start_all, run_stop_all, AppState};
+use crate::process_manager::{codex_integration_info, CodexIntegrationInfo, ProcessInfo};
+use crate::{config, install_skill_impl, run_inject_all, run_start_all, run_stop_all, AppState};
 
 /// 只監聽回環地址；CLI 還必須攜帶本機 config 中的 instance secret。
 pub const CONTROL_ADDR: &str = "127.0.0.1:47824";
@@ -23,6 +23,8 @@ struct ControlResponse {
     message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     processes: Option<Vec<ProcessInfo>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    integration: Option<CodexIntegrationInfo>,
 }
 
 impl ControlResponse {
@@ -31,6 +33,7 @@ impl ControlResponse {
             ok: true,
             message: message.into(),
             processes: None,
+            integration: None,
         }
     }
 
@@ -39,6 +42,7 @@ impl ControlResponse {
             ok: false,
             message: message.into(),
             processes: None,
+            integration: None,
         }
     }
 }
@@ -63,9 +67,14 @@ async fn execute(app: &tauri::AppHandle, request: ControlRequest) -> ControlResp
             ok: true,
             message: "Launcher status".to_string(),
             processes: Some(pm.get_all_status().await),
+            integration: Some(codex_integration_info(config.cdp_port)),
         },
         "start" => match run_start_all(&pm, app, &config).await {
             Ok(()) => ControlResponse::success("Taskboard and injector started"),
+            Err(error) => ControlResponse::error(error),
+        },
+        "inject" => match run_inject_all(&pm, app, &config).await {
+            Ok(()) => ControlResponse::success("Taskboard injected into Codex"),
             Err(error) => ControlResponse::error(error),
         },
         "stop" => match run_stop_all(&pm, app).await {
@@ -159,6 +168,7 @@ mod tests {
         let encoded = serde_json::to_value(ControlResponse::success("ok")).unwrap();
         assert_eq!(encoded["ok"], true);
         assert!(encoded.get("processes").is_none());
+        assert!(encoded.get("integration").is_none());
     }
 
     #[test]

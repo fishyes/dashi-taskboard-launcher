@@ -52,10 +52,15 @@ The packaged CLI talks to the same process manager as the GUI, so scripts can co
 $launcher = "$env:LOCALAPPDATA\Codex Pro Max\dashi-launcher.cmd"
 & $launcher status
 & $launcher start
+& $launcher inject
 & $launcher stop
 & $launcher restart
 & $launcher skill reinstall
 ```
+
+`start` 是非破壞性啟動：若 Codex 已經在沒有 CDP 的情況下執行，它會停止並回報原因，不會關閉工作中的 Codex。`inject`（或 `start --restart-codex`）是明確授權的復原入口：它會在必要時關閉目前的 Codex，再以 CDP 模式重新啟動並注入任務面板。
+
+在 Windows 上，請從 **Codex Pro Max** 啟動並點擊「一鍵啟動」，或在系統匣選擇「使用任務面板啟動／重新啟動 Codex」。直接從 Windows 開始功能表啟動原版 Codex 不會永久帶入注入參數；發生這種情況時執行 `inject` 即可復原。
 
 Add `--json` to any command for machine-readable output. In a source checkout, the equivalent entry point is `pnpm launcher -- <command>`.
 

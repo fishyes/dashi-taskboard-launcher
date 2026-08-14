@@ -18,6 +18,8 @@ export const usage = `Codex Pro Max Launcher CLI
 用法:
   dashi-launcher status [--json]
   dashi-launcher start [--json]
+  dashi-launcher inject [--json]
+  dashi-launcher start --restart-codex [--json]
   dashi-launcher stop [--json]
   dashi-launcher restart [--json]
   dashi-launcher skill reinstall [--json]
@@ -28,6 +30,12 @@ export function normalizeCommand(rawArgs) {
   const json = rawArgs.includes("--json");
   if (args.length === 1 && ["status", "start", "stop", "restart"].includes(args[0])) {
     return { command: args[0], json };
+  }
+  if (
+    (args.length === 1 && args[0] === "inject") ||
+    (args.length === 2 && args[0] === "start" && args[1] === "--restart-codex")
+  ) {
+    return { command: "inject", json };
   }
   if (
     (args.length === 2 && args[0] === "skill" && args[1] === "reinstall") ||
@@ -162,6 +170,11 @@ export function formatHuman(response) {
       const pid = processInfo.pid == null ? "-" : processInfo.pid;
       lines.push(`${processInfo.name}\t${processInfo.status}\tPID ${pid}\t${processInfo.message || ""}`);
     }
+  }
+  if (response.integration) {
+    lines.push(
+      `codex-integration\t${response.integration.state}\tCDP ${response.integration.cdpPort}\t${response.integration.message || ""}`,
+    );
   }
   return lines.join("\n");
 }

@@ -54,6 +54,7 @@ fn zh_cn(key: &str) -> Option<&'static str> {
     Some(match key {
         // —— 托盘菜单（main.rs）——
         "Show Main Window" => "显示主窗口",
+        "Start or restart Codex with Taskboard" => "使用任務面板啟動／重新啟動 Codex",
         "Start All" => "一键启动",
         "Stop All" => "全部停止",
         "Quit" => "退出",
@@ -89,6 +90,9 @@ fn zh_cn(key: &str) -> Option<&'static str> {
         "Timed out waiting for Codex CDP port {port} to be ready. If Codex is already running, quit it completely and retry" => "等待 Codex CDP 端口 {port} 就绪超时。若 Codex 已在运行，请先完全退出（含托盘）后重试",
         "Codex is already running without the CDP debug port" => "Codex 已在运行，但未开启 CDP 调试端口",
         "Codex did not exit in time; please quit it manually and retry" => "Codex 未能及时退出，请手动结束后重试",
+        "Codex is not running; use inject to launch it with Taskboard" => "Codex 尚未執行；請使用 inject 以任務面板模式啟動",
+        "Codex debug port {port} is ready for Taskboard injection" => "Codex 偵錯連接埠 {port} 已就緒，可注入任務面板",
+        "Codex is running without Taskboard injection; use inject to restart it safely" => "Codex 正在執行但尚未注入任務面板；請使用 inject 安全重新啟動",
 
         // —— 环境与工具检测（main.rs）——
         "Cannot execute {path}: {error}" => "无法执行 {path}: {error}",

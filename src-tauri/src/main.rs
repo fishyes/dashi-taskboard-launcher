@@ -444,6 +444,29 @@ async fn run_start_all(
     Ok(())
 }
 
+/// 明确授权的注入入口：若 Codex 已正常启动但没有 CDP，先退出再以注入模式重开。
+/// 只供用户主动点击托盘或执行 `dashi-launcher inject` 调用；背景任务不得调用。
+async fn run_inject_all(
+    pm: &ProcessManager,
+    app: &tauri::AppHandle,
+    config: &LauncherConfig,
+) -> Result<(), String> {
+    // 先做只读预检，避免把「需要重启」走成一次 Failed 状态与错误通知。
+    if process_manager::codex_integration_info(config.cdp_port).state
+        == process_manager::CodexIntegrationState::RunningWithoutDebug
+    {
+        process_manager::quit_codex().await?;
+    }
+    match run_start_all(pm, app, config).await {
+        // 处理预检与实际启动之间 Codex 刚好被直接打开的竞态。
+        Err(error) if error.starts_with(process_manager::CODEX_RUNNING_NO_CDP_MARK) => {
+            process_manager::quit_codex().await?;
+            run_start_all(pm, app, config).await
+        }
+        result => result,
+    }
+}
+
 /// 全部停止的共享实现：Tauri 命令与托盘菜单共用
 async fn run_stop_all(pm: &ProcessManager, app: &tauri::AppHandle) -> Result<(), String> {
     app.emit("status-update", &serde_json::json!({
@@ -809,12 +832,18 @@ fn build_tray_menu(
     use tauri::menu::{MenuBuilder, MenuItemBuilder};
 
     let show = MenuItemBuilder::with_id("show", i18n::tr("Show Main Window")).build(app)?;
+    let inject = MenuItemBuilder::with_id(
+        "inject",
+        i18n::tr("Start or restart Codex with Taskboard"),
+    )
+    .build(app)?;
     let start = MenuItemBuilder::with_id("start-all", i18n::tr("Start All")).build(app)?;
     let stop = MenuItemBuilder::with_id("stop-all", i18n::tr("Stop All")).build(app)?;
     let quit = MenuItemBuilder::with_id("quit", i18n::tr("Quit")).build(app)?;
     Ok(MenuBuilder::new(app)
         .item(&show)
         .separator()
+        .item(&inject)
         .item(&start)
         .item(&stop)
         .separator()
@@ -838,6 +867,21 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     }
     tray.on_menu_event(|app, event| match event.id().as_ref() {
         "show" => show_main_window(app),
+        "inject" => {
+            let app_handle = app.clone();
+            tauri::async_runtime::spawn(async move {
+                let pm = app_handle.state::<AppState>().pm.clone();
+                match config::load_config() {
+                    Ok(cfg) => {
+                        if let Err(e) = run_inject_all(&pm, &app_handle, &cfg).await {
+                            log::error!("托盘注入启动失败: {}", e);
+                            notify_process_failure("codex-injector", &e);
+                        }
+                    }
+                    Err(e) => log::error!("托盘注入启动读取配置失败: {}", e),
+                }
+            });
+        }
         "start-all" => {
             let app_handle = app.clone();
             tauri::async_runtime::spawn(async move {
