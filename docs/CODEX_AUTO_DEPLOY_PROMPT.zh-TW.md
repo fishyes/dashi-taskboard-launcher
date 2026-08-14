@@ -55,9 +55,10 @@ Scheduled tasks 的建立、啟用與本機專案限制請以 [Codex 官方說�
 - pnpm：Launcher 使用提交的 `pnpm-lock.yaml`；為可重現建置，使用 Corepack 啟用 `pnpm@11.16.0`，不得任意重寫 lockfile。
 - Rust：`src-tauri/Cargo.toml` 宣告最低 `1.77.2`；必須使用 `x86_64-pc-windows-msvc` 或與目標架構相符的 Windows MSVC target。已驗證 `rustc/cargo 1.97.1`。
 - Tauri CLI：使用 Launcher lockfile 解析的 `2.11.4`；不得另裝一份未鎖定的全域 Tauri CLI 取代專案版本。
+- DeepSeek Harness／Tailscale：只有啟用 Launcher 1.1.0 起新增的 dsh 遠端存取功能時才需要。`@deepseek-ai/dsh` 透過 npm 全域安裝；Tailscale 必須已登入並可使用 MagicDNS／Serve。Windows 若 dsh 首次啟動因建立符號連結出現 `EPERM`，需先開啟開發人員模式再重試。未使用此功能時，不得把 dsh 或 Tailscale 當成 Taskboard/Codex 的硬性依賴。
 - Windows 建置環境：x64 Windows、WebView2 Evergreen Runtime、Rust MSVC target 所需的 C++ linker，以及 NSIS/Tauri 能正常完成一次實際 build。不要只因 registry 或 PATH 有名稱就判定可用。
 - Git/GitHub CLI：不硬編最低版，但 `git` 必須支援 submodule、worktree 與目前 repo 格式，`gh` 必須已登入且能建立 fork／push。已驗證 Git `2.44.0.windows.1`、gh `2.94.0`。
-- 專案快照：本文件最近驗證為 Launcher `1.0.0`、Taskboard `1.0.3`；實際部署版本以 checkout 後的 manifest、tag 與 commit 為準，不得為了吻合本段文字降版。
+- 專案快照：本文件最近驗證為 Launcher `1.1.2`（另含上游 `cd6e4d6` 的 tag 後修正）、Taskboard `1.0.3`；實際部署版本以 checkout 後的 manifest、tag 與 commit 為準，不得為了吻合本段文字降版。
 
 Codex CLI 是獨立閘門，必須遵守：
 
