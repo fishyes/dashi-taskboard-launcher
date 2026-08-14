@@ -368,13 +368,24 @@ fn refresh_liveness(proc: &mut ManagedProcess) {
     }
 }
 
+fn reachable_cdp_host(port: u16) -> Option<&'static str> {
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream};
+    let addresses = [
+        ("127.0.0.1", IpAddr::V4(Ipv4Addr::LOCALHOST)),
+        ("::1", IpAddr::V6(Ipv6Addr::LOCALHOST)),
+    ];
+    addresses.into_iter().find_map(|(host, address)| {
+        TcpStream::connect_timeout(
+            &SocketAddr::new(address, port),
+            std::time::Duration::from_millis(500),
+        )
+        .is_ok()
+        .then_some(host)
+    })
+}
+
 pub fn cdp_reachable(port: u16) -> bool {
-    use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
-    TcpStream::connect_timeout(
-        &SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port),
-        std::time::Duration::from_millis(500),
-    )
-    .is_ok()
+    reachable_cdp_host(port).is_some()
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -763,6 +774,12 @@ impl ProcessManager {
         // 注意：注入器不读 CODEX_TASKBOARD_APP_PATH，app 路径只用于上面的拉起。
         // instance token/secret 与 server 保持一致，注入器才认 server 为「自己的实例」
         cmd.env("CODEX_TASKBOARD_HOST", "127.0.0.1");
+        // 新版 Windows Codex 可能只把 CDP 綁在 IPv6 loopback；把實際可達的
+        // loopback 位址傳給注入器，避免把已就緒的偵錯埠誤判為逾時。
+        cmd.env(
+            "CODEX_TASKBOARD_CDP_HOST",
+            reachable_cdp_host(cdp_port).unwrap_or("127.0.0.1"),
+        );
         cmd.env("CODEX_TASKBOARD_PORT", taskboard_port.to_string());
         cmd.env("CODEX_TASKBOARD_INSTANCE_TOKEN", instance_token);
         cmd.env("CODEX_TASKBOARD_INSTANCE_SECRET", instance_secret);
@@ -864,7 +881,9 @@ impl ProcessManager {
 
 #[cfg(test)]
 mod tests {
-    use super::{hmac_proof, integration_state_for, resolve_node, CodexIntegrationState};
+    use super::{
+        cdp_reachable, hmac_proof, integration_state_for, resolve_node, CodexIntegrationState,
+    };
 
     #[test]
     fn integration_state_prioritizes_debug_port() {
@@ -880,6 +899,17 @@ mod tests {
             integration_state_for(false, false),
             CodexIntegrationState::NotRunning
         );
+    }
+
+    #[test]
+    fn cdp_reachable_accepts_ipv6_loopback() {
+        use std::net::{Ipv6Addr, TcpListener};
+
+        let Ok(listener) = TcpListener::bind((Ipv6Addr::LOCALHOST, 0)) else {
+            return;
+        };
+        let port = listener.local_addr().expect("IPv6 listener address").port();
+        assert!(cdp_reachable(port));
     }
 
     #[test]
