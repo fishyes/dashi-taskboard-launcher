@@ -9,10 +9,12 @@ use serde::Serialize;
 mod config;
 mod cli_control;
 mod codex_guard;
+mod dsh;
 mod fastctx;
 mod i18n;
 mod process_manager;
 mod updater;
+mod version;
 
 use config::LauncherConfig;
 use process_manager::{ProcessManager, ProcessInfo, resolve_node};
@@ -1049,6 +1051,11 @@ pub fn run() {
             fastctx::fastctx_apply,
             fastctx::fastctx_unapply,
             fastctx::fastctx_open_console,
+            dsh::dsh_detect,
+            dsh::dsh_setup,
+            dsh::dsh_stop,
+            dsh::dsh_set_autostart,
+            dsh::dsh_update,
             updater::get_updater_config_health,
             updater::get_updater_help_paths,
             updater::check_update,
