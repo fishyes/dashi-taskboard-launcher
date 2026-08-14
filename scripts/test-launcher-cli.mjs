@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import path from "node:path";
 
 import {
@@ -60,5 +61,13 @@ assert.equal(
   }),
   "OK: Launcher status\ncodex-integration\trunning_without_debug\tCDP 9231\tCodex is running without Taskboard injection",
 );
+
+const doubleClickLauncher = fs.readFileSync(
+  new URL("./start-codex-taskboard.cmd", import.meta.url),
+  "utf8",
+);
+assert.match(doubleClickLauncher, /dashi-launcher\.cmd/);
+assert.match(doubleClickLauncher, /\binject\b/);
+assert.doesNotMatch(doubleClickLauncher, /\bstart\b --restart-codex/);
 
 console.log("Launcher CLI tests passed");
