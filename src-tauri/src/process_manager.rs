@@ -223,6 +223,8 @@ pub struct ManagedProcess {
     pub child: Option<Child>,
     pub status: ProcessStatus,
     pub message: String,
+    /// 注入器依赖的 Codex CDP 端口；进程运行期间失联即判失败
+    pub cdp_port: Option<u16>,
     /// 子进程 stdout/stderr 尾部（环形缓冲），把启动失败原因暴露给 UI
     pub output_tail: Arc<std::sync::Mutex<String>>,
 }
@@ -234,6 +236,7 @@ impl ManagedProcess {
             child: None,
             status: ProcessStatus::Stopped,
             message: String::new(),
+            cdp_port: None,
             output_tail: Arc::new(std::sync::Mutex::new(String::new())),
         }
     }
@@ -348,23 +351,71 @@ async fn fail_if_exited(proc: &mut ManagedProcess) -> Result<(), String> {
     }
 }
 
+/// 终止子进程：先优雅退出，超时再强杀（与 stop_* 共用同一策略）
+async fn terminate_child(child: &mut Child) {
+    let pid = child.id();
+    if let Some(pid) = pid {
+        #[cfg(unix)]
+        {
+            let _ = std::process::Command::new("kill")
+                .arg("-TERM")
+                .arg(pid.to_string())
+                .output();
+        }
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            let _ = std::process::Command::new("taskkill")
+                .args(["/PID", &pid.to_string(), "/T", "/F"])
+                .creation_flags(CREATE_NO_WINDOW)
+                .output();
+        }
+    }
+    match tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await {
+        Ok(_) => {}
+        Err(_) => {
+            let _ = child.start_kill();
+            let _ = child.wait().await;
+        }
+    }
+}
+
 /// 轮询时做活性检测：子进程意外退出（哪怕启动很久之后）要翻成 Failed，
-/// 否则 UI 永远停在"运行中"
-fn refresh_liveness(proc: &mut ManagedProcess) {
+/// 否则 UI 永远停在"运行中"。注入器额外校验 Codex CDP 端口：Codex 退出后
+/// 注入器 watch 进程仍存活等待重连，只有主动检测端口失联并终止，才能把
+/// 「Codex 已停」如实报成 Failed，避免主页永远显示"运行中"
+async fn refresh_liveness(proc: &mut ManagedProcess) {
     if proc.status != ProcessStatus::Running && proc.status != ProcessStatus::Starting {
         return;
     }
     let Some(child) = proc.child.as_mut() else { return };
-    if let Ok(Some(status)) = child.try_wait() {
-        let tail = tail_of(&proc.output_tail);
-        let detail = if tail.is_empty() { String::new() } else { format!(": {}", tail) };
-        proc.child = None;
-        proc.status = ProcessStatus::Failed;
-        proc.message = trf("Process exited unexpectedly ({status}){detail}", &[
-            ("status", status.to_string()),
-            ("detail", detail),
-        ]);
-        crate::notify_process_failure(&proc.name, &proc.message);
+    match child.try_wait() {
+        Ok(Some(status)) => {
+            let tail = tail_of(&proc.output_tail);
+            let detail = if tail.is_empty() { String::new() } else { format!(": {}", tail) };
+            proc.child = None;
+            proc.status = ProcessStatus::Failed;
+            proc.message = trf("Process exited unexpectedly ({status}){detail}", &[
+                ("status", status.to_string()),
+                ("detail", detail),
+            ]);
+            crate::notify_process_failure(&proc.name, &proc.message);
+        }
+        Ok(None) => {
+            if let Some(port) = proc.cdp_port {
+                if !cdp_reachable(port) {
+                    terminate_child(child).await;
+                    proc.child = None;
+                    proc.status = ProcessStatus::Failed;
+                    proc.message = trf("Codex exited; injector lost CDP port {port}", &[
+                        ("port", port.to_string()),
+                    ]);
+                    crate::notify_process_failure(&proc.name, &proc.message);
+                }
+            }
+        }
+        Err(_) => {}
     }
 }
 
@@ -748,6 +799,7 @@ impl ProcessManager {
         }
 
         inj.status = ProcessStatus::Starting;
+        inj.cdp_port = Some(cdp_port);
         inj.message = tr("Waiting for Codex debug port...");
 
         if let Err(e) = ensure_codex_cdp(codex_app_path, cdp_port, separate_window, taskboard_port, instance_token).await {
@@ -857,6 +909,7 @@ impl ProcessManager {
         }
 
         inj.child = None;
+        inj.cdp_port = None;
         inj.status = ProcessStatus::Stopped;
         inj.message = tr("Stopped");
         Ok(())
@@ -866,8 +919,8 @@ impl ProcessManager {
     pub async fn get_all_status(&self) -> Vec<ProcessInfo> {
         let mut tb = self.taskboard.lock().await;
         let mut inj = self.injector.lock().await;
-        refresh_liveness(&mut tb);
-        refresh_liveness(&mut inj);
+        refresh_liveness(&mut tb).await;
+        refresh_liveness(&mut inj).await;
         vec![tb.info(), inj.info()]
     }
 
@@ -882,7 +935,8 @@ impl ProcessManager {
 #[cfg(test)]
 mod tests {
     use super::{
-        cdp_reachable, hmac_proof, integration_state_for, resolve_node, CodexIntegrationState,
+        cdp_reachable, hmac_proof, integration_state_for, refresh_liveness, resolve_node,
+        CodexIntegrationState, ManagedProcess, ProcessStatus,
     };
 
     #[test]
@@ -911,7 +965,6 @@ mod tests {
         let port = listener.local_addr().expect("IPv6 listener address").port();
         assert!(cdp_reachable(port));
     }
-
     #[test]
     fn resolves_existing_node() {
         // 显式路径原样返回
@@ -935,5 +988,40 @@ mod tests {
             proof,
             "da1acb03bb1d5fe42165f2ec004a20c466fc7d84e73a397c73431d1b9b2762ed"
         );
+    }
+
+    #[tokio::test]
+    async fn injector_fails_when_cdp_port_disappears_while_child_stays_alive() {
+        let mut proc = ManagedProcess::new("codex-injector");
+        proc.status = ProcessStatus::Running;
+        // port 9（discard）本机几乎不会监听，代表 Codex 已退出、CDP 失联
+        proc.cdp_port = Some(9);
+
+        // 注入器 watch 进程存活（Codex 退出后不会自己退出），旧逻辑会永远显示运行中
+        #[cfg(target_os = "windows")]
+        let mut child_command = {
+            let mut command = tokio::process::Command::new("ping");
+            command.args(["-n", "6", "127.0.0.1"]);
+            command
+        };
+        #[cfg(not(target_os = "windows"))]
+        let mut child_command = {
+            let mut command = tokio::process::Command::new("sleep");
+            command.arg("5");
+            command
+        };
+        let child = child_command
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .expect("spawn child for liveness test");
+        proc.child = Some(child);
+
+        refresh_liveness(&mut proc).await;
+
+        assert_eq!(proc.status, ProcessStatus::Failed);
+        assert!(proc.message.contains("CDP port 9"), "message was: {}", proc.message);
+        assert!(proc.child.is_none());
     }
 }

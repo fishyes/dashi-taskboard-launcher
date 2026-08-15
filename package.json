@@ -1,20 +1,21 @@
 {
   "name": "codex-pro-max",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.3",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "node scripts/test-theme.mjs && node scripts/test-launcher-cli.mjs",
+    "test": "node scripts/test-theme.mjs && pnpm exec vitest run && node scripts/test-launcher-cli.mjs",
     "launcher": "node scripts/dashi-launcher-cli.mjs",
     "preview": "vite preview",
     "tauri": "tauri",
     "build:updater": "node scripts/build-updater.mjs",
     "build:taskboard": "npm --prefix vendor/dashi-taskboard install && npm --prefix vendor/dashi-taskboard run build:web",
     "ensure:taskboard": "node -e \"require('fs').mkdirSync('vendor/dashi-taskboard/dist/web',{recursive:true})\"",
-    "check:release": "node scripts/check-release.mjs"
+    "check:release": "node scripts/check-release.mjs",
+    "smoke": "node scripts/smoke/drive.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -22,15 +23,30 @@
     "@tauri-apps/plugin-notification": "^2",
     "@tauri-apps/plugin-process": "^2",
     "@tauri-apps/plugin-shell": "^2",
-    "i18next": "^26.3.6"
+    "clsx": "^2.1.1",
+    "i18next": "^26.3.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.11",
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.4",
     "@types/node": "^22.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "esbuild": "^0.28.2",
+    "jsdom": "^30.0.1",
+    "playwright-core": "^1.62.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.6.0",
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
   }
 }
