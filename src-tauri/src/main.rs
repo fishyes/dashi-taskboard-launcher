@@ -1097,6 +1097,7 @@ pub fn run() {
             fastctx::fastctx_open_console,
             dsh::dsh_detect,
             dsh::dsh_setup,
+            dsh::dsh_start_web,
             dsh::dsh_stop,
             dsh::dsh_set_autostart,
             dsh::dsh_update,
