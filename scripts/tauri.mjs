@@ -6,7 +6,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
@@ -14,7 +14,7 @@ const args = process.argv.slice(2);
 // 追加 cargo bin（仅当存在；幂等：重复出现在 PATH 中无害）
 const cargoBin = join(homedir(), ".cargo", "bin");
 if (existsSync(cargoBin)) {
-  process.env.PATH = `${cargoBin}${process.env.PATH ? `:${process.env.PATH}` : ""}`;
+  process.env.PATH = `${cargoBin}${process.env.PATH ? `${delimiter}${process.env.PATH}` : ""}`;
 }
 
 // node_modules/.bin/tauri 是 npm 装的可执行 shim。Windows 上实际可执行的是 tauri.CMD

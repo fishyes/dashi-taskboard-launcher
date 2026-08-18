@@ -70,4 +70,11 @@ assert.match(doubleClickLauncher, /dashi-launcher\.cmd/);
 assert.match(doubleClickLauncher, /\binject\b/);
 assert.doesNotMatch(doubleClickLauncher, /\bstart\b --restart-codex/);
 
+const tauriWrapper = fs.readFileSync(
+  new URL("./tauri.mjs", import.meta.url),
+  "utf8",
+);
+assert.match(tauriWrapper, /import \{ delimiter, join \} from "node:path"/);
+assert.match(tauriWrapper, /\$\{delimiter\}\$\{process\.env\.PATH\}/);
+
 console.log("Launcher CLI tests passed");
