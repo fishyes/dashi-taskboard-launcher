@@ -47,6 +47,7 @@
       "../vendor/dashi-taskboard/inject": "vendor/dashi-taskboard/inject",
       "../vendor/dashi-taskboard/skills": "vendor/dashi-taskboard/skills",
       "../vendor/dashi-taskboard/dist/web": "vendor/dashi-taskboard/dist/web",
+      "../vendor/dashi-taskboard/node_modules/smol-toml": "vendor/dashi-taskboard/node_modules/smol-toml",
       "../vendor/dashi-taskboard/package.json": "vendor/dashi-taskboard/package.json",
       "../scripts/dashi-launcher-cli.mjs": "dashi-launcher-cli.mjs",
       "../scripts/dashi-launcher.cmd": "dashi-launcher.cmd",

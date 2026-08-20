@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "node scripts/test-theme.mjs && pnpm exec vitest run && node scripts/test-launcher-cli.mjs",
+    "test": "node scripts/test-theme.mjs && pnpm exec vitest run && node scripts/test-launcher-cli.mjs && node scripts/test-taskboard-runtime-resources.mjs",
     "launcher": "node scripts/dashi-launcher-cli.mjs",
     "preview": "vite preview",
     "tauri": "node scripts/tauri.mjs",
