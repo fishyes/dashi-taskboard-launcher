@@ -223,6 +223,10 @@ export function DshCard() {
     try {
       if (isRemote) {
         await cmd.dshSetup();
+        // dsh_setup 回傳 void：serve 設定完成後，遠端網址由 detect 提供。三個授權參數
+        // 留空也能正常 serve（一般遠端存取只靠身分 allowlist），因此成功後直接開啟遠端網址。
+        const s = await cmd.dshDetect();
+        if (s.url) await open(s.url);
         toast(t("Remote access ready"), "success");
       } else {
         const url = await cmd.dshStartWeb();
