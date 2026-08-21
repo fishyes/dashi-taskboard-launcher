@@ -809,8 +809,8 @@ impl ProcessManager {
 
     /// 启动 codex 注入器
     /// 两种模式统一走跨平台的 --watch：由启动器负责拉起带 CDP 端口的
-    /// Codex 实例（ensure_codex_cdp），不再用注入器的 --launch
-    /// （其内部 open/pgrep/ps 仅支持 macOS，Windows 上必然失败）。
+    /// Codex 实例（ensure_codex_cdp），不再用注入器的 --launch；Windows
+    /// 注入器只附着并追踪已由此处启动、CDP 就绪的 Codex 实例。
     /// token 模式：注入器从 env 读 instance token/secret，与 server 一致，
     /// 否则注入器会自生成一套导致与 launcher 起的 server 互相不可达
     /// 9 个参数为 Tauri command 拉齐的整包配置字段，结构上按位置传递
