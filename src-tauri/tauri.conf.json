@@ -1,11 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
   "productName": "Codex Pro Max",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "identifier": "com.codex.pro.max",
   "build": {
-    "beforeDevCommand": "pnpm run build:dsh-plugins && pnpm run ensure:taskboard && pnpm run dev",
-    "beforeBuildCommand": "pnpm run build:taskboard && pnpm run build:dsh-plugins && pnpm run build",
+    "beforeDevCommand": "pnpm run ensure:taskboard && pnpm run dev",
+    "beforeBuildCommand": "pnpm run build:taskboard && pnpm run build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },
@@ -52,9 +52,7 @@
       "../scripts/dashi-launcher-cli.mjs": "dashi-launcher-cli.mjs",
       "../scripts/dashi-launcher.cmd": "dashi-launcher.cmd",
       "../scripts/start-codex-taskboard.cmd": "start-codex-taskboard.cmd",
-      "../vendor/dashi-taskboard/integrations/deepseek-harness": "vendor/dashi-taskboard/integrations/deepseek-harness",
-      "../.artifacts/dsh-plugins/dsh-client-connection-authz-873c465f1403.tgz": "dsh-plugins/dsh-client-connection-authz-873c465f1403.tgz",
-      "../.artifacts/dsh-plugins/dsh-auth-tailscale-ea7ca9fa3db4.tgz": "dsh-plugins/dsh-auth-tailscale-ea7ca9fa3db4.tgz"
+      "../vendor/dashi-taskboard/integrations/deepseek-harness": "vendor/dashi-taskboard/integrations/deepseek-harness"
     },
     "macOS": {
       "hardenedRuntime": true,
