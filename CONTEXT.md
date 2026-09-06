@@ -14,13 +14,13 @@
 - **启用（Apply）** — 把参数的（修改后或默认）值写入 codex 对应文件。
 - **锁定（Lock）** — 已启用参数的看守状态；锁定期间轮询发现实际值与配置值不一致时自动改回。
 - **轮询（Poll）** — 周期性比对锁定参数的实际状态与配置状态。
-- **schema** — 描述托管参数集合的 JSON 文件。落盘于 launcher 配置目录，启动时与内置 schema 合并（同 id 磁盘覆盖内置——用户定制内置参数；但 `label_en` / `description_en` / `default_en` 英文资源始终以内置为准，磁盘独有条目保留），UI 完全由合并结果驱动。
+- **schema** — 描述托管参数集合的 JSON 文件。内置 schema 是内置参数的唯一权威（含默认值与英文资源）；磁盘文件（落盘于 launcher 配置目录）只承载用户自定义参数（`custom=true`）——磁盘上的内置同名条目与已从内置移除的旧条目在加载时忽略并回写清理，UI 完全由合并结果驱动。
 - **漂移（Drift）** — 锁定参数的实际状态与配置值不一致。轮询发现漂移即自动改回（写入前备份），配置页记录上次校验/恢复时间，不弹通知。
 - **备份（Backup）** — 任何写入前把目标文件当前内容复制到 `~/.codex/dashi-backups/<文件名>.<时间戳>.bak`，每文件保留 20 份，无 UI 还原入口。
-- **路径（Path）** — TOML 参数在文件中的点分位置，如 `features.image_generation`、`features.multi_agent_v2.enabled`、`agents`（toml_absent 的目标）。写入/比对/删除都按路径在解析后的 TOML 树上定位，中间表不存在时写入会逐级创建。
+- **路径（Path）** — TOML 参数在文件中的点分位置，如 `features.image_generation`、`agents.enabled`、`agents.max_threads`（toml_absent 的目标）。写入/比对/删除都按路径在解析后的 TOML 树上定位，中间表不存在时写入会逐级创建。
 - **apply_mode** — 参数写入/校验的方式，四选一：
   - `toml_key` — 写入/更新 TOML 某键；比对值。
-  - `toml_absent` — 确保某 TOML section 不存在；它再出现就再删（用于 multi_agent_v1 的 `[agents]` 块）。
+  - `toml_absent` — 确保某 TOML 路径不存在；它再出现就再删（当前用于逐键清理 multi_agent_v1 遗留键，如 `agents.max_threads`，不整表删除 `[agents]`）。
   - `file_overwrite` — 整文件内容即值；比对全文哈希。
   - `markdown_block` — 用 `<!-- dashi:begin/end 名称 -->` 标记圈定的 Markdown 托管区块；比对区块内容。
 
