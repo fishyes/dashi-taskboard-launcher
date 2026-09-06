@@ -42,9 +42,9 @@ const guardParams: AnyRec[] = [
     actual: "false", status: "match", error: null, lastChecked: null, lastRestored: null, custom: false,
   },
   {
-    id: "features.multi_agent_v2.enabled", label: "Multi Agent V2", description: "",
-    applyMode: "toml_key", valueType: "int", path: "features.multi_agent_v2.enabled",
-    default: 60, value: 42, applied: true, locked: true,
+    id: "agents.max_concurrent_threads_per_session", label: "Max Concurrent Subagents", description: "",
+    applyMode: "toml_key", valueType: "int", path: "agents.max_concurrent_threads_per_session",
+    default: 10, value: 42, applied: true, locked: true,
     actual: "42", status: "match", error: null, lastChecked: 1760000000, lastRestored: 1759990000, custom: false,
   },
   {
@@ -61,7 +61,7 @@ const guardParams: AnyRec[] = [
   },
   {
     id: "agents_section", label: "Agents Section (absent)", description: "",
-    applyMode: "toml_absent", valueType: "none", path: "agents",
+    applyMode: "toml_absent", valueType: "none", path: "agents.max_threads",
     default: null, value: null, applied: true, locked: false,
     actual: "absent", status: "match", error: null, lastChecked: null, lastRestored: null, custom: false,
   },

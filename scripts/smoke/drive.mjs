@@ -203,7 +203,7 @@ check("看守视图：3 分组渲染", (await page.locator("[data-group-id]").co
 check("看守视图：参数卡数量 6", (await page.locator(".guard-param-card").count()) === 6);
 check("看守视图：状态徽标含 Drift", await visible(".status-badge.failed:has-text('Drift')"));
 check("看守视图：锁定参数时间行", (await txt("#guard-view"))?.includes("Last checked"));
-check("看守视图：锁定参数编辑器禁用", await page.locator("[data-guard-id='features.multi_agent_v2.enabled']").isDisabled());
+check("看守视图：锁定参数编辑器禁用", await page.locator("[data-guard-id='agents.max_concurrent_threads_per_session']").isDisabled());
 check("看守视图：未启用参数 Lock 禁用", (await page.locator("#guard-view button:has-text('Lock'):disabled").count()) >= 1);
 const cardBtns = await page.locator(".guard-param-card").last().locator("button").allTextContents();
 check("看守视图：自定义参数有 Delete", (await page.locator("#guard-view .guard-param-card button:has-text('Delete')").count()) >= 1, cardBtns.join("/"));

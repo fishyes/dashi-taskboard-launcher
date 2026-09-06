@@ -1,18 +1,5 @@
 [
   {
-    "id": "features.multi_agent_v2.enabled",
-    "group": "config.toml",
-    "label": "multi_agent_v2 总开关",
-    "description": "启用 V2 多子代理；为未在模型目录中明确指定协议的模型启用 V2 回退",
-    "file": "config.toml",
-    "apply_mode": "toml_key",
-    "path": "features.multi_agent_v2.enabled",
-    "value_type": "bool",
-    "default": true,
-    "label_en": "multi_agent_v2 master switch",
-    "description_en": "Enable V2 multi-subagent; enables V2 fallback for models without an explicit protocol in the model catalog"
-  },
-  {
     "id": "features.multi_agent_v2.hide_spawn_agent_metadata",
     "group": "config.toml",
     "label": "隐藏派生元数据",
@@ -24,19 +11,6 @@
     "default": true,
     "label_en": "Hide spawn metadata",
     "description_en": "Hide agent_type, service_tier, model and reasoning_effort that the main agent can specify; this practice defines no subagent categories, so models need no type parameter (codex default: true)"
-  },
-  {
-    "id": "features.multi_agent_v2.tool_namespace",
-    "group": "config.toml",
-    "label": "工具命名空间",
-    "description": "避开 GPT-5.6 保留的 collaboration 命名空间（codex 官方命名冲突问题）",
-    "file": "config.toml",
-    "apply_mode": "toml_key",
-    "path": "features.multi_agent_v2.tool_namespace",
-    "value_type": "string",
-    "default": "agents",
-    "label_en": "Tool namespace",
-    "description_en": "Avoid the collaboration namespace reserved by GPT-5.6 (official codex naming conflict)"
   },
   {
     "id": "features.multi_agent_v2.expose_spawn_agent_model_overrides",
@@ -197,15 +171,54 @@
   {
     "id": "agents-v1-remove",
     "group": "config.toml",
-    "label": "移除旧 multi_agent_v1 键",
-    "description": "v1 的 max_threads / max_depth / interrupt_message 已被 v2 取代（agents.enabled 与 agents.max_concurrent_threads_per_session 为当前有效键，勿移除）。启用 = 删除这三个键；锁定 = 保持其不存在",
+    "label": "移除 v1 max_threads 键",
+    "description": "v1 并发键 max_threads 现为 agents.max_concurrent_threads_per_session 的别名，并存即冲突；并发上限只保留 agents.max_concurrent_threads_per_session 一处。勿删整个 [agents] 表（agents.enabled 等键当前有效）。启用 = 删除该键；锁定 = 保持其不存在",
     "file": "config.toml",
     "apply_mode": "toml_absent",
-    "path": "agents",
+    "path": "agents.max_threads",
     "value_type": "none",
     "default": null,
-    "label_en": "Remove legacy multi_agent_v1 keys",
-    "description_en": "v1 keys max_threads / max_depth / interrupt_message are superseded by v2 (agents.enabled and agents.max_concurrent_threads_per_session remain valid — do not remove them). Apply = delete those three keys; Lock = keep them absent"
+    "label_en": "Remove v1 max_threads key",
+    "description_en": "The v1 concurrency key max_threads is now an alias of agents.max_concurrent_threads_per_session; keeping both conflicts. The concurrency limit lives only at agents.max_concurrent_threads_per_session. Never delete the whole [agents] table (agents.enabled etc. remain valid). Apply = delete this key; Lock = keep it absent"
+  },
+  {
+    "id": "agents-v1-remove-max-depth",
+    "group": "config.toml",
+    "label": "移除 v1 max_depth 键",
+    "description": "v1 线程嵌套深度键，V2 已忽略；当前实践不再设置。启用 = 删除该键；锁定 = 保持其不存在",
+    "file": "config.toml",
+    "apply_mode": "toml_absent",
+    "path": "agents.max_depth",
+    "value_type": "none",
+    "default": null,
+    "label_en": "Remove v1 max_depth key",
+    "description_en": "V1 thread-nesting depth key, ignored by V2; no longer set by this practice. Apply = delete this key; Lock = keep it absent"
+  },
+  {
+    "id": "agents-v1-remove-interrupt-message",
+    "group": "config.toml",
+    "label": "移除 v1 interrupt_message 键",
+    "description": "旧 [agents] 表携带的中断消息记录键（codex 默认 true）；当前实践不再设置。启用 = 删除该键；锁定 = 保持其不存在",
+    "file": "config.toml",
+    "apply_mode": "toml_absent",
+    "path": "agents.interrupt_message",
+    "value_type": "none",
+    "default": null,
+    "label_en": "Remove v1 interrupt_message key",
+    "description_en": "Interrupt-message recording key carried by the legacy [agents] table (codex default: true); no longer set by this practice. Apply = delete this key; Lock = keep it absent"
+  },
+  {
+    "id": "multi-agent-v2-max-concurrency-remove",
+    "group": "config.toml",
+    "label": "移除 v2 表旧并发键",
+    "description": "features.multi_agent_v2.max_concurrent_threads_per_session 是旧实践设置并发上限的位置（默认 7），已迁至 agents.max_concurrent_threads_per_session；同一上限只保留唯一有效位置。启用 = 删除该键；锁定 = 保持其不存在",
+    "file": "config.toml",
+    "apply_mode": "toml_absent",
+    "path": "features.multi_agent_v2.max_concurrent_threads_per_session",
+    "value_type": "none",
+    "default": null,
+    "label_en": "Remove legacy v2-table concurrency key",
+    "description_en": "features.multi_agent_v2.max_concurrent_threads_per_session was this practice's old concurrency-limit location (default 7); it has moved to agents.max_concurrent_threads_per_session, and the same limit keeps a single valid location. Apply = delete this key; Lock = keep it absent"
   },
   {
     "id": "agents-md-subagent-section",
